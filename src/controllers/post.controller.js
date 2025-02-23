@@ -1,4 +1,4 @@
-import { Post } from "../models/post.model";
+import { Post } from "../models/post.model.js";
 import { asynchandler } from "../utils/asynchandler.js";
 import { Apierror } from "../utils/apiError.js";
 import { Apiresponce } from "../utils/apiResponce.js";
@@ -22,6 +22,7 @@ const createPost = asynchandler(async (req, res, next) => {
     const currentpost = await Post.create({
       title,
       imageUrl,
+      creater: req.user?._id,
       description,
       link,
       isLike: false,

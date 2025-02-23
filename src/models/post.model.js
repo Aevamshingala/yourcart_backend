@@ -8,12 +8,13 @@ const postSchema = new Schema(
       required: true,
       trim: true,
     },
+    creater: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+    },
     imageUrl: {
       type: String,
       required: true,
-    },
-    isLike: {
-      type: Boolean,
     },
     description: {
       type: String,
