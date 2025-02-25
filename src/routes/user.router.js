@@ -13,6 +13,9 @@ import {
   likePost,
   showpost,
   likeHistory,
+  allprofile,
+  createUnFollowerPipline,
+  currentUser,
 } from "../controllers/user.controller.js";
 import { createPost } from "../controllers/post.controller.js";
 
@@ -34,5 +37,8 @@ router.route("/likePost").post(verifyJwt, likePost);
 router.route("/createpost").post(verifyJwt, createPost);
 router.route("/showpost").post(verifyJwt, showpost);
 router.route("/likeHistory").post(verifyJwt, likeHistory);
+router.route("/allprofile").post(verifyJwt, allprofile);
+router.route("/unfollow").post(verifyJwt, createUnFollowerPipline);
+router.route("/myprofile").post(verifyJwt, currentUser);
 
 export { router as userrouter };

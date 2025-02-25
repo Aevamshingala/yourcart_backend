@@ -7,6 +7,7 @@ import { follow } from "../models/follow.model.js";
 import { Post } from "../models/post.model.js";
 import { deleteInCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
+import { json } from "stream/consumers";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -33,7 +34,8 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const registerUser = asynchandler(async (req, res, next) => {
   try {
-    const { userName, email, password, fullName, gender } = req.body;
+    const { userName, email, password, fullName, gender, discription } =
+      req.body;
     const avatarLocalPath = req.file?.path;
 
     if (!avatarLocalPath) {
@@ -45,6 +47,7 @@ const registerUser = asynchandler(async (req, res, next) => {
       { password: password },
       { fullName: fullName },
       { gender: gender },
+      { discription: discription },
     ];
 
     // if {user:username} then object.entries() is use to conver {} to []
@@ -83,6 +86,7 @@ const registerUser = asynchandler(async (req, res, next) => {
       password,
       email,
       gender,
+      discription,
     });
 
     const createdUser = await user
@@ -190,6 +194,23 @@ const logout = asynchandler(async (req, res, next) => {
   }
 });
 
+const currentUser = asynchandler(async (req, res, next) => {
+  try {
+    const curruser = await user
+      .findOne({ _id: req.user?._id })
+      .select("-password -refreshToken");
+    if (!currentUser) {
+      throw new Apierror(404, "can't find the user");
+    }
+
+    return res
+      .status(200)
+      .json(new Apiresponce(200, curruser, "user fetch successfully"));
+  } catch (error) {
+    next(error);
+  }
+});
+
 const changePassword = asynchandler(async (req, res, next) => {
   try {
     const { password, newpassword } = req.body;
@@ -276,6 +297,28 @@ const createFollowerPipline = asynchandler(async (req, res, next) => {
     return res
       .status(200)
       .json(new Apiresponce(200, pipline, "pipline created successfully"));
+  } catch (error) {
+    next(error);
+  }
+});
+
+const createUnFollowerPipline = asynchandler(async (req, res, next) => {
+  try {
+    const { unfollowId } = req.body;
+    if (!unfollowId) {
+      throw new Apierror(401, "can't find the id to unfollow");
+    }
+    const unfollow = await follow.findOneAndDelete({
+      whoFollow: req.user?._id,
+      whomToFollow: unfollowId,
+    });
+    if (!unfollow) {
+      throw new Apierror(401, "can't unfollow");
+    }
+
+    return res
+      .status(200)
+      .json(new Apiresponce(200, unfollow, "unfollow successfully"));
   } catch (error) {
     next(error);
   }
@@ -504,6 +547,40 @@ const likeHistory = asynchandler(async (req, res, next) => {
   }
 });
 
+const allprofile = asynchandler(async (req, res, next) => {
+  try {
+    const joinedData = await user.aggregate([
+      {
+        $lookup: {
+          from: "follows",
+          localField: "_id",
+          foreignField: "whoFollow",
+          as: "followData",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          userName: 1,
+          avatar: 1,
+          discdiscription: 1,
+          "followData.whomToFollow": 1,
+        },
+      },
+    ]);
+
+    if (!joinedData) {
+      throw new Apierror(401, "can't fetch profile");
+    }
+
+    return res
+      .status(200)
+      .json(new Apiresponce(200, joinedData, "user fetched successfully"));
+  } catch (error) {
+    next(error);
+  }
+});
+
 export {
   registerUser,
   login,
@@ -517,4 +594,7 @@ export {
   likePost,
   showpost,
   likeHistory,
+  allprofile,
+  createUnFollowerPipline,
+  currentUser,
 };

@@ -39,7 +39,6 @@ const userSchema = new Schema(
       required: [true, "password is required"],
     },
     discription: {
-      //login
       type: String,
     },
     avatar: {
