@@ -3,8 +3,8 @@ import { room as Room } from "../models/socket_io_room.model.js";
 import { Apierror } from "../utils/apiError.js";
 const newMessage = async ({ room, content }) => {
   // const { room, user, content } = req.body;
-  console.log(content);
-  console.log(typeof content);
+  // console.log(content);
+  // console.log(typeof content);
 
   try {
     if (!room) {

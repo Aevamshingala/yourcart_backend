@@ -3,7 +3,7 @@ import { Server } from "socket.io";
 import { room as Room } from "../models/socket_io_room.model.js";
 import { newMessage } from "./socket.controller.js";
 import { app } from "../app.js";
-
+import { joinMeToUser } from "./personal_socket.controller.js";
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
@@ -38,6 +38,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("newChat", newMessage);
+  socket.on("joinMeToUser", joinMeToUser);
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
   });

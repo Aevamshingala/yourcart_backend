@@ -8,6 +8,11 @@ const postSchema = new Schema(
       required: true,
       trim: true,
     },
+    category: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     creater: {
       type: Schema.Types.ObjectId,
       ref: "user",
@@ -27,12 +32,6 @@ const postSchema = new Schema(
     likeCount: {
       type: Number,
     },
-    whoLike: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "user",
-      },
-    ],
   },
   {
     timestamps: true,

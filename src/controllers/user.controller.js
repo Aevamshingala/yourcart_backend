@@ -1,13 +1,12 @@
 import { asynchandler } from "../utils/asynchandler.js";
 import { Apierror } from "../utils/apiError.js";
-import { Apiresponce } from "../utils/apiResponce.js";
+import { Apiresponse } from "../utils/apiResponce.js";
 import validator from "validator";
 import { user } from "../models/user.model.js";
 import { follow } from "../models/follow.model.js";
 import { Post } from "../models/post.model.js";
 import { deleteInCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
-import { json } from "stream/consumers";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -34,8 +33,15 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const registerUser = asynchandler(async (req, res, next) => {
   try {
-    const { userName, email, password, fullName, gender, discription } =
-      req.body;
+    const {
+      userName,
+      email,
+      password,
+      fullName,
+      gender,
+      discription,
+      Location,
+    } = req.body;
     const avatarLocalPath = req.file?.path;
 
     if (!avatarLocalPath) {
@@ -48,6 +54,7 @@ const registerUser = asynchandler(async (req, res, next) => {
       { fullName: fullName },
       { gender: gender },
       { discription: discription },
+      { Location: Location },
     ];
 
     // if {user:username} then object.entries() is use to conver {} to []
@@ -87,6 +94,7 @@ const registerUser = asynchandler(async (req, res, next) => {
       email,
       gender,
       discription,
+      Location,
     });
 
     const createdUser = await user
@@ -99,7 +107,7 @@ const registerUser = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, createdUser, "usercreate successfully"));
+      .json(new Apiresponse(200, createdUser, "usercreate successfully"));
   } catch (error) {
     next(error);
   }
@@ -150,7 +158,7 @@ const login = asynchandler(async (req, res, next) => {
       .cookie("accessToken", AccessToken, options)
       .cookie("refreshToken", RefreshToken, options)
       .json(
-        new Apiresponce(
+        new Apiresponse(
           200,
           {
             user: finalLoginUser,
@@ -188,7 +196,7 @@ const logout = asynchandler(async (req, res, next) => {
       .status(200)
       .clearCookie("accessToken", options)
       .clearCookie("refreshToken", options)
-      .json(new Apiresponce(200, "user logout successfully"));
+      .json(new Apiresponse(200, "user logout successfully"));
   } catch (error) {
     next(error);
   }
@@ -199,18 +207,35 @@ const currentUser = asynchandler(async (req, res, next) => {
     const curruser = await user
       .findOne({ _id: req.user?._id })
       .select("-password -refreshToken");
-    if (!currentUser) {
+    if (!curruser) {
       throw new Apierror(404, "can't find the user");
     }
 
     return res
       .status(200)
-      .json(new Apiresponce(200, curruser, "user fetch successfully"));
+      .json(new Apiresponse(200, curruser, "user fetch successfully"));
   } catch (error) {
     next(error);
   }
 });
 
+const findUser = asynchandler(async (req, res, next) => {
+  try {
+    const id = req.body;
+    const curruser = await user
+      .findOne({ _id: id })
+      .select("-password -refreshToken");
+    if (!curruser) {
+      throw new Apierror(404, "can't find the user");
+    }
+
+    return res
+      .status(200)
+      .json(new Apiresponse(200, curruser, "user fetch successfully"));
+  } catch (error) {
+    next(error);
+  }
+});
 const changePassword = asynchandler(async (req, res, next) => {
   try {
     const { password, newpassword } = req.body;
@@ -231,7 +256,7 @@ const changePassword = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, "password change success fully"));
+      .json(new Apiresponse(200, "password change success fully"));
   } catch (error) {
     next(error);
   }
@@ -266,7 +291,7 @@ const changeAvatar = asynchandler(async (req, res, next) => {
     return res
       .status(200)
       .json(
-        new Apiresponce(200, uploadedAvatar, "profile change successfully")
+        new Apiresponse(200, uploadedAvatar, "profile change successfully")
       );
   } catch (e) {
     next(e);
@@ -296,7 +321,7 @@ const createFollowerPipline = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, pipline, "pipline created successfully"));
+      .json(new Apiresponse(200, pipline, "pipline created successfully"));
   } catch (error) {
     next(error);
   }
@@ -318,7 +343,7 @@ const createUnFollowerPipline = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, unfollow, "unfollow successfully"));
+      .json(new Apiresponse(200, unfollow, "unfollow successfully"));
   } catch (error) {
     next(error);
   }
@@ -379,6 +404,8 @@ const getFollowers = asynchandler(async (req, res, next) => {
           email: 1,
           userName: 1,
           avatar: 1,
+          discription: 1,
+          Location: 1,
           fullName: 1,
         },
       },
@@ -390,7 +417,7 @@ const getFollowers = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, follower, "follower fetch successfully"));
+      .json(new Apiresponse(200, follower, "follower fetch successfully"));
   } catch (error) {
     next(error);
   }
@@ -414,7 +441,7 @@ const whoFollow = asynchandler(async (req, res, next) => {
     return res
       .status(200)
       .json(
-        new Apiresponce(200, finalfollower, "follower fetched successfully")
+        new Apiresponse(200, finalfollower, "follower fetched successfully")
       );
   } catch (error) {
     next(error);
@@ -440,78 +467,78 @@ const Following = asynchandler(async (req, res, next) => {
     return res
       .status(200)
       .json(
-        new Apiresponce(200, finalFollowing, "following fetched successfully")
+        new Apiresponse(200, finalFollowing, "following fetched successfully")
       );
   } catch (error) {
     next(error);
   }
 });
 
-const likePost = asynchandler(async (req, res, next) => {
-  try {
-    const { postId } = req.body;
-    if (!postId) throw new Apierror(401, "postId not found");
-    const post = await Post.findById({ _id: postId });
-    if (!post) throw new Apierror(401, "post data not found");
-    const me = await user.findById({ _id: req.user?._id });
-    if (!me) {
-      throw new Apierror(404, "user not found");
-    }
-    if (
-      me.likePost.some((e) => e.equals(new mongoose.Types.ObjectId(postId)))
-    ) {
-      const currentUser = await user.updateOne(
-        { _id: req.user?._id },
-        {
-          $pull: {
-            likePost: post?._id,
-          },
-        }
-      );
-      if (!currentUser) {
-        throw new Apierror(401, "user not updated");
-      }
-      const currentPost = await Post.updateOne(
-        { _id: post?._id },
-        {
-          $pull: {
-            whoLike: me?._id,
-          },
-          $inc: {
-            likeCount: -1,
-          },
-        }
-      );
-      if (!currentPost) {
-        throw new Apierror(401, "post not updated");
-      }
-      return res.status(200).json(new Apiresponce(200, "unliked"));
-    }
+// const likePost = asynchandler(async (req, res, next) => {
+//   try {
+//     const { postId } = req.body;
+//     if (!postId) throw new Apierror(401, "postId not found");
+//     const post = await Post.findById({ _id: postId });
+//     if (!post) throw new Apierror(401, "post data not found");
+//     const me = await user.findById({ _id: req.user?._id });
+//     if (!me) {
+//       throw new Apierror(404, "user not found");
+//     }
+//     if (
+//       me.likePost.some((e) => e.equals(new mongoose.Types.ObjectId(postId)))
+//     ) {
+//       const currentUser = await user.updateOne(
+//         { _id: req.user?._id },
+//         {
+//           $pull: {
+//             likePost: post?._id,
+//           },
+//         }
+//       );
+//       if (!currentUser) {
+//         throw new Apierror(401, "user not updated");
+//       }
+//       const currentPost = await Post.updateOne(
+//         { _id: post?._id },
+//         {
+//           $pull: {
+//             whoLike: me?._id,
+//           },
+//           $inc: {
+//             likeCount: -1,
+//           },
+//         }
+//       );
+//       if (!currentPost) {
+//         throw new Apierror(401, "post not updated");
+//       }
+//       return res.status(200).json(new Apiresponse(200, "unliked"));
+//     }
 
-    const currentUser = await user.updateOne(
-      { _id: req.user?._id },
-      {
-        $push: {
-          likePost: post?._id,
-        },
-      }
-    );
-    if (!currentUser) {
-      throw new Apierror(401, "user not updated");
-    }
-    post.whoLike.push(me?._id);
-    post.likeCount = post.whoLike.length;
+//     const currentUser = await user.updateOne(
+//       { _id: req.user?._id },
+//       {
+//         $push: {
+//           likePost: post?._id,
+//         },
+//       }
+//     );
+//     if (!currentUser) {
+//       throw new Apierror(401, "user not updated");
+//     }
+//     post.whoLike.push(me?._id);
+//     post.likeCount = post.whoLike.length;
 
-    await post.save({ validateBeforeSave: false });
-    await me.save({ validateBeforeSave: false });
+//     await post.save({ validateBeforeSave: false });
+//     await me.save({ validateBeforeSave: false });
 
-    return res.status(200).json(new Apiresponce(200, "liked"));
-  } catch (error) {
-    console.log(error);
+//     return res.status(200).json(new Apiresponse(200, "liked"));
+//   } catch (error) {
+//     console.log(error);
 
-    next(error);
-  }
-});
+//     next(error);
+//   }
+// });
 
 const showpost = asynchandler(async (req, res, next) => {
   try {
@@ -524,7 +551,7 @@ const showpost = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, post, "post fetched successfully"));
+      .json(new Apiresponse(200, post, "post fetched successfully"));
   } catch (error) {
     next(error);
   }
@@ -541,13 +568,13 @@ const likeHistory = asynchandler(async (req, res, next) => {
     }
     return res
       .status(200)
-      .json(new Apiresponce(200, me, "All post fetched successfully"));
+      .json(new Apiresponse(200, me, "All post fetched successfully"));
   } catch (error) {
     next(error);
   }
 });
 
-const allprofile = asynchandler(async (req, res, next) => {
+const allProfile = asynchandler(async (req, res, next) => {
   try {
     const joinedData = await user.aggregate([
       {
@@ -563,7 +590,8 @@ const allprofile = asynchandler(async (req, res, next) => {
           _id: 1,
           userName: 1,
           avatar: 1,
-          discdiscription: 1,
+          discription: 1,
+          Location: 1,
           "followData.whomToFollow": 1,
         },
       },
@@ -575,7 +603,25 @@ const allprofile = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, joinedData, "user fetched successfully"));
+      .json(new Apiresponse(200, joinedData, "user fetched successfully"));
+  } catch (error) {
+    next(error);
+  }
+});
+
+const allPost = asynchandler(async (req, res, next) => {
+  try {
+    const posts = await Post.find().populate({
+      path: "creater",
+      select: "-password -refreshToken",
+    });
+    if (!posts) {
+      throw new Apierror(401, "can't fetch post");
+    }
+
+    return res
+      .status(200)
+      .json(new Apiresponse(200, "post fetched successfully"));
   } catch (error) {
     next(error);
   }
@@ -590,11 +636,13 @@ export {
   getFollowers,
   createFollowerPipline,
   whoFollow,
+  findUser,
   Following,
   likePost,
   showpost,
   likeHistory,
-  allprofile,
+  allProfile,
   createUnFollowerPipline,
   currentUser,
+  allPost,
 };

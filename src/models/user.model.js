@@ -41,6 +41,9 @@ const userSchema = new Schema(
     discription: {
       type: String,
     },
+    Location: {
+      type: String,
+    },
     avatar: {
       type: String,
     },

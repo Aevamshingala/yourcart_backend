@@ -1,7 +1,7 @@
 import { Post } from "../models/post.model.js";
 import { asynchandler } from "../utils/asynchandler.js";
 import { Apierror } from "../utils/apiError.js";
-import { Apiresponce } from "../utils/apiResponce.js";
+import { Apiresponse } from "../utils/apiResponce.js";
 
 const createPost = asynchandler(async (req, res, next) => {
   try {
@@ -31,7 +31,7 @@ const createPost = asynchandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new Apiresponce(200, currentpost, "post create success fully"));
+      .json(new Apiresponse(200, currentpost, "post create success fully"));
   } catch (error) {
     next(error);
   }

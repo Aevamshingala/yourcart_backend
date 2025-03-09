@@ -10,8 +10,7 @@ const RoomSchema = new Schema(
     message: [
       {
         user: {
-          type: Schema.Types.ObjectId,
-          ref: "user",
+          type: String,
           // requierd: true,
         },
         content: {
