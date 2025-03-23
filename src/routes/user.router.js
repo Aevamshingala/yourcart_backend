@@ -17,9 +17,13 @@ import {
   createUnFollowerPipline,
   currentUser,
   allPost,
-  findUser,
+  UsersPost,
+  followingLike,
 } from "../controllers/user.controller.js";
-import { createPost } from "../controllers/post.controller.js";
+import {
+  createPost,
+  specificUserData,
+} from "../controllers/post.controller.js";
 
 import { verifyJwt } from "../middlewares/auth.middlewares.js";
 
@@ -43,6 +47,8 @@ router.route("/allprofile").post(verifyJwt, allProfile);
 router.route("/unfollow").post(verifyJwt, createUnFollowerPipline);
 router.route("/myprofile").post(verifyJwt, currentUser);
 router.route("/allpost").post(verifyJwt, allPost);
-router.route("/finduser").post(verifyJwt, findUser);
+router.route("/userspost").post(verifyJwt, UsersPost);
+router.route("/followinglike").post(verifyJwt, Following, followingLike);
+router.route("/finduserposts").post(verifyJwt, specificUserData);
 
 export { router as userrouter };

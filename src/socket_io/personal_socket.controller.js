@@ -1,4 +1,4 @@
-import io from "./server.js";
+import { io } from "./server.js";
 import { PersonalMessage } from "../models/personalMessage.js";
 
 async function joinMeToUser({ receiverId, senderId }) {

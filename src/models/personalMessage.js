@@ -29,7 +29,7 @@ const PersonalMessageSchema = new Schema(
   }
 );
 
-export const PersonalMessage = mongoose.Model(
+export const PersonalMessage = mongoose.model(
   "PersonalMessage",
   PersonalMessageSchema
 );

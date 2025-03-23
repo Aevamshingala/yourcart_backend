@@ -6,8 +6,7 @@ import { user } from "../models/user.model.js";
 import { follow } from "../models/follow.model.js";
 import { Post } from "../models/post.model.js";
 import { deleteInCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
-import mongoose from "mongoose";
-
+import { Like } from "../models/like.model.js";
 const generateAccessAndRefreshToken = async (userId) => {
   try {
     const Currentuser = await user.findById(userId);
@@ -219,23 +218,6 @@ const currentUser = asynchandler(async (req, res, next) => {
   }
 });
 
-const findUser = asynchandler(async (req, res, next) => {
-  try {
-    const id = req.body;
-    const curruser = await user
-      .findOne({ _id: id })
-      .select("-password -refreshToken");
-    if (!curruser) {
-      throw new Apierror(404, "can't find the user");
-    }
-
-    return res
-      .status(200)
-      .json(new Apiresponse(200, curruser, "user fetch successfully"));
-  } catch (error) {
-    next(error);
-  }
-});
 const changePassword = asynchandler(async (req, res, next) => {
   try {
     const { password, newpassword } = req.body;
@@ -542,9 +524,12 @@ const Following = asynchandler(async (req, res, next) => {
 
 const showpost = asynchandler(async (req, res, next) => {
   try {
-    const { postId } = req.body;
-    if (!postId) throw new Apierror(401, "postId not found");
-    const post = await Post.findById({ _id: postId });
+    const { postName } = req.body;
+    if (!postName) throw new Apierror(401, "postName not found");
+    const post = await Post.findOne({ title: postName }).populate({
+      path: "creater",
+      select: "-password -refreshToken",
+    });
     if (!post) {
       throw new Apierror(401, "post not found");
     }
@@ -626,7 +611,84 @@ const allPost = asynchandler(async (req, res, next) => {
     next(error);
   }
 });
+const likePost = asynchandler(async (req, res, next) => {
+  try {
+    const { postId } = req.body;
+    if (!postId) throw new Apierror(401, "post id not found");
 
+    const findpost = await Post.findById({ _id: postId });
+
+    if (!findpost) throw new Apierror(402, "post  not found");
+    console.log(findpost);
+
+    const findlikeModel = await Like.findOne({
+      post: findpost?._id,
+      user: req.user?._id,
+    });
+    if (findlikeModel) {
+      await Like.deleteOne({ findlikeModel });
+      return res.status(200).json(new Apiresponse(200, "unLike successfully"));
+    }
+    const Liked = await Like.create({
+      post: postId,
+      user: req.user?._id,
+    });
+
+    if (!Liked) throw new Apierror(401, "Like is not done");
+
+    const likeCounts = await Like.countDocuments({
+      post: postId,
+    });
+    findpost.likeCount = likeCounts;
+
+    await findpost.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .json(new Apiresponse(200, Liked, "Liked successFully"));
+  } catch (error) {
+    next(error);
+  }
+});
+
+const UsersPost = asynchandler(
+  asynchandler(async (req, res, next) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) throw new Apierror(401, "userId not found");
+
+      const userPostData = await Post.find({ creater: userId });
+      if (!userPostData) throw new Apierror(401, "userPostData not found");
+
+      return res
+        .status(200)
+        .json(new Apiresponse(200, userPostData, "data fetched successfully"));
+    } catch (error) {
+      next();
+    }
+  })
+);
+
+const followingLike = asynchandler(async (req, res, next) => {
+  try {
+    if (!req.user) {
+      throw new Apierror(404, "user not found");
+    }
+    const followings = await follow
+      .find({
+        whoFollow: req.user?._id,
+      })
+      .populate({ path: "whomToFollow", select: "-password -refreshToken" });
+
+    const postData = await Like.aggregate([{}]);
+
+    return res
+      .status(200)
+      .json(new Apiresponse(200, postData, "got the following"));
+  } catch (error) {
+    next(error);
+  }
+});
 export {
   registerUser,
   login,
@@ -636,7 +698,6 @@ export {
   getFollowers,
   createFollowerPipline,
   whoFollow,
-  findUser,
   Following,
   likePost,
   showpost,
@@ -645,4 +706,6 @@ export {
   createUnFollowerPipline,
   currentUser,
   allPost,
+  followingLike,
+  UsersPost,
 };

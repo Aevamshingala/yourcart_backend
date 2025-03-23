@@ -5,12 +5,13 @@ import { Apiresponse } from "../utils/apiResponce.js";
 
 const createPost = asynchandler(async (req, res, next) => {
   try {
-    const { title, imageUrl, description, link } = req.body;
+    const { title, imageUrl, description, link, category } = req.body;
     const alldetails = [
       { title: title },
       { imageUrl: imageUrl },
       { description: description },
       { link: link },
+      { category: category },
     ];
     alldetails.map((obj, i) => {
       const [key, value] = Object.entries(obj)[0]; // it give array in side array so i use [0]
@@ -25,6 +26,7 @@ const createPost = asynchandler(async (req, res, next) => {
       creater: req.user?._id,
       description,
       link,
+      category,
       isLike: false,
       likeCount: 0,
     });
@@ -36,5 +38,21 @@ const createPost = asynchandler(async (req, res, next) => {
     next(error);
   }
 });
-
-export { createPost };
+const specificUserData = asynchandler(async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      throw new Apierror(401, "userId not found");
+    }
+    const userPostData = await Post.find({ creater: userId });
+    if (!userPostData) {
+      throw new Apierror(402, "No post data found ");
+    }
+    return res
+      .status(200)
+      .json(new Apiresponse(200, userPostData, "data fetch successfully"));
+  } catch (error) {
+    next(error);
+  }
+});
+export { createPost, specificUserData };
